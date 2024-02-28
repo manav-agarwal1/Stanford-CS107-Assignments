@@ -4,6 +4,7 @@ using namespace std;
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <cassert>
 #include "imdb.h"
 
 const char *const imdb::kActorFileName = "actordata";
@@ -58,16 +59,19 @@ bool imdb::getCredits(const string& player, vector<film>& films) const {
   if (actorOffset == NULL) {
     return false;
   }
-
+  
   char *actorStart = (char *)start + *actorOffset;
+  string foundActorName(actorStart);
+  assert(player == foundActorName);
+
   char *loc = (char *) (actorStart + strlen(actorStart));
-  // Skip \0
+  // skip padding
   while (*loc == '\0') {
     loc++;
   }
   short nFilms = *(short *)loc;
   loc += sizeof(short);
-  // skip \0
+  // skip padding
   while (*loc == '\0') {
     loc++;
   }
@@ -81,11 +85,56 @@ bool imdb::getCredits(const string& player, vector<film>& films) const {
     char *yearOffset = movieNameStart + strlen(movieNameStart) + 1;
     f.year = 1900 + *yearOffset;
     films.push_back(f);
+    // char *curr = yearOffset + 1;
+    // while (*curr == '\0')
+    //   curr++;
+    // cout << f.title << ' ' << "nActors: " << ' ' << *(short *) curr << endl;
     readDone++;
   }
   return true; 
 }
-bool imdb::getCast(const film& movie, vector<string>& players) const { return false; }
+bool imdb::getCast(const film& movie, vector<string>& players) const { 
+  int *start = (int *) movieInfo.fileMap;
+  char *actorStart = (char *)actorInfo.fileMap; 
+  keyStruct *param = new keyStruct;
+  string movieName = movie.title;
+  param->key = &movieName;
+  param->base = start;
+  int *movieOffset = (int *) bsearch (param, (void *) (start+1), *start, sizeof(int), bsearchCompare);
+  if (movieOffset == NULL) {
+    return false;
+  }
+  char *movieNameStart = (char *)start + *movieOffset;
+  string foundMovieName(movieNameStart);
+  assert(movieName == foundMovieName);
+  // assert(strlen(foundMovieName.c_str()) == strlen(movieStart));
+  char *loc = movieNameStart + strlen(movieNameStart) + 1; // +2 for \0 and year-1900
+  int year = 1900 + *loc;
+  cout << foundMovieName << ' ' << year << endl;
+  // loc++;
+  // // skip padding
+  // while (*loc == '\0') {
+  //   loc++;
+  // }
+  // short nActors = *(short *)loc;
+  // loc += sizeof(short);
+  // // skip padding
+  // while (*loc == '\0') {
+  //   loc++;
+  // }
+  // cout << movieName << ' ' << nActors << endl;
+  // short readDone = 0;
+  // while (readDone < nActors) {
+  //   int *offset = (int *)loc + readDone;
+  //   char *target = actorStart + *offset;
+  //   string actorName(target);
+    
+  //   players.push_back(actorName);
+  //   readDone++;
+  //   cout << readDone << ". " << movieName << ' ' << actorName << endl;
+  // }
+  return false; 
+}
 
 imdb::~imdb()
 {
