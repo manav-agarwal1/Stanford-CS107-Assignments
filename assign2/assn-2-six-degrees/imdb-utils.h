@@ -2,7 +2,7 @@
 #define __imdb_utils__
 
 #include <vector>
-#include <string>
+#include <string.h>
 #include <iostream>
 using namespace std;
 
@@ -42,8 +42,8 @@ struct film {
   }
   
   bool operator<(const film& rhs) const { 
-    return this->title < rhs.title || 
-           this->title == rhs.title && this->year < rhs.year; 
+    return (this->title < rhs.title) || 
+           (this->title == rhs.title && this->year < rhs.year); 
   }
 };
 
@@ -60,12 +60,11 @@ struct film {
 inline const char *determinePathToData(const char *userSelectedPath = NULL)
 {
   if (userSelectedPath != NULL) return userSelectedPath;
-  
   const char *ostype = getenv("OSTYPE");
   if (strcasecmp(ostype, "linux") == 0)
-    return "/usr/class/cs107/assignments/assn-2-six-degrees-data/little-endian/";
+    return "/home/manavagrwl/stan_cs107/assign2/assn-2-six-degrees-data/little-endian/";
   if (strcasecmp(ostype, "solaris") == 0)
-    return "/usr/class/cs107/assignments/assn-2-six-degrees-data/big-endian/";
+    return "/home/manavagrwl/stan_cs107/assign2/assn-2-six-degrees-data/big-endian/";
   
   cerr << "Unsupported OS... bailing" << endl;
   exit(1);
