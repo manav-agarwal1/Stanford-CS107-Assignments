@@ -61,14 +61,14 @@ inline const char *determinePathToData(const char *userSelectedPath = NULL)
 {
   if (userSelectedPath != NULL) return userSelectedPath;
   const char *ostype = getenv("OSTYPE");
-  if (strcasecmp(ostype, "linux") == 0)
-    return "/home/manavagrwl/stan_cs107/assign2/assn-2-six-degrees-data/little-endian/";
+  // if (strcasecmp(ostype, "linux") == 0)
+  return "/home/manavagrwl/stan_cs107/assign2/assn-2-six-degrees-data/little-endian/";
   if (strcasecmp(ostype, "solaris") == 0)
     return "/home/manavagrwl/stan_cs107/assign2/assn-2-six-degrees-data/big-endian/";
   
-  cerr << "Unsupported OS... bailing" << endl;
-  exit(1);
-  return NULL;
+  // cerr << "Unsupported OS... bailing" << endl;
+  // exit(1);
+  // return NULL;
 }
 
 #endif

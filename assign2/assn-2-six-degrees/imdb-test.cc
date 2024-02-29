@@ -200,8 +200,8 @@ static void queryForActors(const imdb& db)
 
 int main(int argc, char **argv)
 {
-  imdb db(determinePathToData());
-  cout << "check" << endl;
+  imdb db("/home/manavagrwl/stan_cs107/assign2/assn-2-six-degrees-data/little-endian/");
+  // cout << "check" << endl;
   if (!db.good()) { cerr << "Data directory not found!  Aborting..." << endl; return 1; }
   queryForActors(db);
   return 0;

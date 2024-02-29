@@ -13,6 +13,10 @@ typedef struct {
   const string *key;
   void *base;
 } keyStruct;
+typedef struct {
+  const film *f;
+  void *base;
+} filmStruct;
 
 imdb::imdb(const string& directory)
 {
@@ -85,55 +89,69 @@ bool imdb::getCredits(const string& player, vector<film>& films) const {
     char *yearOffset = movieNameStart + strlen(movieNameStart) + 1;
     f.year = 1900 + *yearOffset;
     films.push_back(f);
-    // char *curr = yearOffset + 1;
-    // while (*curr == '\0')
-    //   curr++;
-    // cout << f.title << ' ' << "nActors: " << ' ' << *(short *) curr << endl;
     readDone++;
   }
   return true; 
 }
+static int bsearchFilmCompare (const void *a, const void *b) {
+  film f;
+  filmStruct *A = (filmStruct *) a;
+  int *offset = (int *) b;
+  char *titleStart = (char *) A->base + *offset;
+  f.title = titleStart;
+  f.year = 1900 + *(titleStart + strlen(titleStart) + 1);
+  if (*(A->f) < f) {
+    return -1;
+  }
+  if (*(A->f) == f) {
+    return 0;
+  } 
+  return 1;
+}
 bool imdb::getCast(const film& movie, vector<string>& players) const { 
   int *start = (int *) movieInfo.fileMap;
   char *actorStart = (char *)actorInfo.fileMap; 
-  keyStruct *param = new keyStruct;
+  filmStruct *param = new filmStruct;
   string movieName = movie.title;
-  param->key = &movieName;
+  param->f = &movie;
   param->base = start;
-  int *movieOffset = (int *) bsearch (param, (void *) (start+1), *start, sizeof(int), bsearchCompare);
+  int *movieOffset = (int *) bsearch (param, (void *) (start+1), *start, sizeof(int), bsearchFilmCompare);
   if (movieOffset == NULL) {
     return false;
   }
   char *movieNameStart = (char *)start + *movieOffset;
   string foundMovieName(movieNameStart);
+  // cout << movie.title << ' ' << foundMovieName << endl;
   assert(movieName == foundMovieName);
-  // assert(strlen(foundMovieName.c_str()) == strlen(movieStart));
-  char *loc = movieNameStart + strlen(movieNameStart) + 1; // +2 for \0 and year-1900
-  int year = 1900 + *loc;
-  cout << foundMovieName << ' ' << year << endl;
-  // loc++;
-  // // skip padding
-  // while (*loc == '\0') {
-  //   loc++;
+  char *loc = movieNameStart + strlen(movieNameStart) + 2; // +2 for \0 and year-1900
+  // skip padding
+  while (*loc == '\0') {
+    loc++;
+  }
+  short nActors = *(short *)loc;
+  loc += sizeof(short);
+  // skip padding
+  while (*loc == '\0') {
+    loc++;
+  }
+  short readDone = 0;
+  // cout << actors << ' ' << readDone << endl;
+  // if (movieName == "Border, The") {
+  //   return false;
   // }
-  // short nActors = *(short *)loc;
-  // loc += sizeof(short);
-  // // skip padding
-  // while (*loc == '\0') {
-  //   loc++;
-  // }
-  // cout << movieName << ' ' << nActors << endl;
-  // short readDone = 0;
-  // while (readDone < nActors) {
-  //   int *offset = (int *)loc + readDone;
-  //   char *target = actorStart + *offset;
-  //   string actorName(target);
+  while (readDone < nActors) {
+    int offset = *((int *)loc + readDone);
+    // cout << "check\n";
+    // cout << offset << endl;
+    char *target = actorStart + offset;
+    // cout << target << endl;
+    string actorName(target);
     
-  //   players.push_back(actorName);
-  //   readDone++;
-  //   cout << readDone << ". " << movieName << ' ' << actorName << endl;
-  // }
-  return false; 
+    players.push_back(actorName);
+    readDone++;
+    // cout << readDone << ". " << movieName << ' ' << actorName << endl;
+  }
+  return true; 
 }
 
 imdb::~imdb()
