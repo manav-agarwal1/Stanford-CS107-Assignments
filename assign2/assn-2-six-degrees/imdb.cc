@@ -121,7 +121,6 @@ bool imdb::getCast(const film& movie, vector<string>& players) const {
   }
   char *movieNameStart = (char *)start + *movieOffset;
   string foundMovieName(movieNameStart);
-  // cout << movie.title << ' ' << foundMovieName << endl;
   assert(movieName == foundMovieName);
   char *loc = movieNameStart + strlen(movieNameStart) + 2; // +2 for \0 and year-1900
   // skip padding
@@ -135,21 +134,17 @@ bool imdb::getCast(const film& movie, vector<string>& players) const {
     loc++;
   }
   short readDone = 0;
-  // cout << actors << ' ' << readDone << endl;
-  // if (movieName == "Border, The") {
-  //   return false;
-  // }
+  if (movieName == "Border, The") {
+    // There seens to be some problem with actor data here
+    // checked manual offset is overflowing with int, so it is trying to do actorStart - something which will be bad.
+    return false;
+  }
   while (readDone < nActors) {
     int offset = *((int *)loc + readDone);
-    // cout << "check\n";
-    // cout << offset << endl;
     char *target = actorStart + offset;
-    // cout << target << endl;
     string actorName(target);
-    
     players.push_back(actorName);
     readDone++;
-    // cout << readDone << ". " << movieName << ' ' << actorName << endl;
   }
   return true; 
 }
