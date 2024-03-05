@@ -34,15 +34,6 @@ bool imdb::good() const
 }
 
 // you should be implementing these two methods right here...
-// static void sanity_check (char *ptr) {
-//   while ((*ptr) != '\0') {
-//     printf("%c", *ptr);
-//     ptr++;
-//   }
-//   ptr++;
-//   short n = *(short *)ptr;
-//   cout << n << endl;
-// } 
 static int bsearchCompare (const void* a, const void* b) {
   keyStruct *param = (keyStruct *) a;
   int offset = *(int *) b;
