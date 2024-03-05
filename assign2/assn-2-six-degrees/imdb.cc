@@ -54,7 +54,7 @@ static int bsearchCompare (const void* a, const void* b) {
 }
 bool imdb::getCredits(const string& player, vector<film>& films) const {
   int *start = (int *) actorInfo.fileMap;
-  char *movieStart = (char *)movieInfo.fileMap;
+  char *movieStart = (char *) movieInfo.fileMap;
   keyStruct *param = new keyStruct;
   param->key = &player;
   param->base = start;
@@ -80,19 +80,18 @@ bool imdb::getCredits(const string& player, vector<film>& films) const {
     loc++;
   }
 
-  short readDone = 0;
-  while (readDone < nFilms) {
+  for (int i = 0; i < nFilms; i++) {
     film f;
-    int *movieOffset = ((int *)loc + readDone);
+    int *movieOffset = ((int *)loc + i);
     char *movieNameStart = movieStart + *movieOffset;
     f.title = movieNameStart; // it will automatically call constructor and take until \0 only
     char *yearOffset = movieNameStart + strlen(movieNameStart) + 1;
     f.year = 1900 + *yearOffset;
     films.push_back(f);
-    readDone++;
   }
   return true; 
 }
+
 static int bsearchFilmCompare (const void *a, const void *b) {
   film f;
   filmStruct *A = (filmStruct *) a;
@@ -110,7 +109,7 @@ static int bsearchFilmCompare (const void *a, const void *b) {
 }
 bool imdb::getCast(const film& movie, vector<string>& players) const { 
   int *start = (int *) movieInfo.fileMap;
-  char *actorStart = (char *)actorInfo.fileMap; 
+  char *actorStart = (char *) actorInfo.fileMap; 
   filmStruct *param = new filmStruct;
   string movieName = movie.title;
   param->f = &movie;
@@ -122,31 +121,22 @@ bool imdb::getCast(const film& movie, vector<string>& players) const {
   char *movieNameStart = (char *)start + *movieOffset;
   string foundMovieName(movieNameStart);
   assert(movieName == foundMovieName);
-  char *loc = movieNameStart + strlen(movieNameStart) + 2; // +2 for \0 and year-1900
-  // skip padding
-  while (*loc == '\0') {
-    loc++;
+  int numActorsOffset = strlen(movieNameStart) + 2; // for \0 and year
+  if (numActorsOffset % 2 != 0) {
+    numActorsOffset++;
   }
-  short nActors = *(short *)loc;
-  loc += sizeof(short);
-  // skip padding
-  while (*loc == '\0') {
-    loc++;
+  int numActors = *(short *) ((char *) start + *movieOffset + numActorsOffset);
+  int actorsOffset = 2;
+  if ((numActorsOffset + 2) % 4 != 0) {
+    actorsOffset = 4;
   }
-  short readDone = 0;
-  if (movieName == "Border, The") {
-    // There seens to be some problem with actor data here
-    // checked manual offset is overflowing with int, so it is trying to do actorStart - something which will be bad.
-    return false;
-  }
-  while (readDone < nActors) {
-    int offset = *((int *)loc + readDone);
-    char *target = actorStart + offset;
-    string actorName(target);
+  int *loc = (int *) ((char *) movieFile + *movieOffset + numActorsOffset + actorsOffset);
+  for (int i = 0; i < numActors; i++) {
+    int actorOffset = *(loc + i);
+    string actorName = actorStart + actorOffset;
     players.push_back(actorName);
-    readDone++;
   }
-  return true; 
+  return true;
 }
 
 imdb::~imdb()
