@@ -1,5 +1,6 @@
 #include <vector>
-#include <list>
+#include <queue>
+#include <unordered_set>
 #include <set>
 #include <string>
 #include <iostream>
@@ -38,6 +39,64 @@ static string promptForActor(const string& prompt, const imdb& db)
 }
 
 /**
+ * @brief Generate Shortest Path from one Actor to Another
+ * @param source: First actor
+ * @param target: Actor we want to find
+ * @param db a reference to the imdb which can be used to confirm
+ *           that a user's response is a legitimate one.
+ * @param doReverse: will be a bool to tell whether to call reverse before printing
+ */
+bool generateShortestPath (string source, string target, const imdb& db, bool doReverse) {
+  vector<film> sourceFilms;
+  db.getCredits(source, sourceFilms);
+  vector<film> targetFilms;
+  db.getCredits(target, targetFilms);
+  if (sourceFilms.size() > targetFilms.size()) {
+    return generateShortestPath(target, source, db, true);
+  }
+
+  unordered_set<string> visitedActors;
+  set<film> visitedMovies;
+  queue<path> branches;
+  branches.push(path(source));
+
+  while (!branches.empty()) {
+    path branch = branches.front();
+    branches.pop();
+
+    // we get movies of node and process them
+    vector<film> credits;
+    db.getCredits( branch.getLastPlayer(), credits);
+
+    for (film& movie: credits) {
+      if (visitedMovies.insert(movie).second) {
+        // If film f is being processed for the first time
+        vector<string> cast;
+        db.getCast(movie, cast);
+
+        for (string& actor: cast) {
+          if (visitedActors.insert(actor).second) {
+            branch.addConnection(movie, actor);
+            if (actor == target) {
+              if (doReverse) {
+                branch.reverse();
+              }
+              cout << "\n" << branch << "\n";
+              return true;
+            }
+            else {
+              branches.push(branch);
+            }
+            branch.undoConnection();
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
  * Serves as the main entry point for the six-degrees executable.
  * There are no parameters to speak of.
  *
@@ -70,7 +129,9 @@ int main(int argc, const char *argv[])
       cout << "Good one.  This is only interesting if you specify two different people." << endl;
     } else {
       // replace the following line by a call to your generateShortestPath routine... 
-      cout << endl << "No path between those two people could be found." << endl << endl;
+      if (!generateShortestPath(source, target, db, false)) {
+        cout << endl << "No path between those two people could be found." << endl << endl;
+      }
     }
   }
   
