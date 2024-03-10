@@ -48,11 +48,15 @@ class imdb {
    * @param player the name of the actor or actresses being queried.
    * @param films a reference to the vector of films that should be updated
    *              with the list of the specified actor/actress's credits.
+   * 
+   * @param numCredits by default null but if passed it will store number of credits
+   * @param onlyNum by default false but if true then execution stops after nFilms
+   *                though still a vector has to be passed and it will stay empty
    * @return true if and only if the specified actor/actress appeared in the
    *              database, and false otherwise.
    */
 
-  bool getCredits(const string& player, vector<film>& films) const;
+  bool getCredits(const string& player, vector<film>& films, short *numCredits = nullptr, bool onlyNum = false) const;
 
   /**
    * Method: getCast

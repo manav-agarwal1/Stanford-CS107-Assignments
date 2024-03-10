@@ -47,11 +47,16 @@ static string promptForActor(const string& prompt, const imdb& db)
  * @param doReverse: will be a bool to tell whether to call reverse before printing
  */
 bool generateShortestPath (string source, string target, const imdb& db, bool doReverse) {
-  vector<film> sourceFilms;
-  db.getCredits(source, sourceFilms);
+  // Modified imdb, without any major changes for this little optimisation
+  // ideally you want to have another function and not have to use a same function signature
+  // but Lazy me
+  vector<film> dummy;
+  short nSource = 0;
+  short nTarget = 0;
+  db.getCredits(source, dummy, &nSource, true);
   vector<film> targetFilms;
-  db.getCredits(target, targetFilms);
-  if (sourceFilms.size() > targetFilms.size()) {
+  db.getCredits(target, dummy, &nTarget, true);
+  if (nSource > nTarget) {
     return generateShortestPath(target, source, db, true);
   }
 

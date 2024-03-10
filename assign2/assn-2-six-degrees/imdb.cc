@@ -43,7 +43,7 @@ static int bsearchCompare (const void* a, const void* b) {
   // printf("%s, %s\n", A, B);
   return strcmp(A, B);
 }
-bool imdb::getCredits(const string& player, vector<film>& films) const {
+bool imdb::getCredits(const string& player, vector<film>& films, short *numCredits, bool onlyNum) const {
   int *start = (int *) actorInfo.fileMap;
   char *movieStart = (char *) movieInfo.fileMap;
   keyStruct *param = new keyStruct;
@@ -65,6 +65,12 @@ bool imdb::getCredits(const string& player, vector<film>& films) const {
     loc++;
   }
   short nFilms = *(short *)loc;
+  if (numCredits != nullptr) {
+    *numCredits = nFilms;
+    if (onlyNum) {
+      return true;
+    }
+  }
   loc += sizeof(short);
   // skip padding
   while (*loc == '\0') {
