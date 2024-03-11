@@ -46,7 +46,8 @@ static string promptForActor(const string& prompt, const imdb& db)
  *           that a user's response is a legitimate one.
  * @param doReverse: will be a bool to tell whether to call reverse before printing
  */
-bool generateShortestPath (string source, string target, const imdb& db, bool doReverse) {
+
+bool generateShortestPathV1 (string source, string target, const imdb& db, bool doReverse) {
   // Modified imdb, without any major changes for this little optimisation
   // ideally you want to have another function and not have to use a same function signature
   // but Lazy me
@@ -57,7 +58,7 @@ bool generateShortestPath (string source, string target, const imdb& db, bool do
   vector<film> targetFilms;
   db.getCredits(target, dummy, &nTarget, true);
   if (nSource > nTarget) {
-    return generateShortestPath(target, source, db, true);
+    return generateShortestPathV1(target, source, db, true);
   }
 
   unordered_set<string> visitedActors;
@@ -102,6 +103,37 @@ bool generateShortestPath (string source, string target, const imdb& db, bool do
 }
 
 /**
+bool generateShortestPath (string source, string target, const imdb& db) {
+  set<film> sourceVisitedMovies, targetVisitedMovies;
+  unordered_set<string> sourceVisitedActors, targetVisitedActors;
+  queue<path> sourceBranches, targetBranches;
+  sourceBranches.push(path(source));
+  targetBranches.push(path(target));
+
+  while (!sourceBranches.empty() && !targetBranches.empty()) {
+    int n = sourceBranches.size();
+    for (int i = 0; i < n; i++) {
+      path sourceBranch = sourceBranches.front();
+      sourceBranches.pop();
+      vector<film> credits;
+      db.getCredits(sourceBranch.getLastPlayer(), credits);
+      for (film &movie: credits) {
+        if (!sourceVisitedMovies.insert(movie).second) {
+          vector<string> cast;
+          db.getCast(movie, cast);
+          if (targetVisitedMovies.find(movie) != targetVisitedMovies.end()) {
+
+          }
+        }
+      }
+    }
+    n = targetBranches.size();
+  }
+  return false;
+}
+*/
+
+/**
  * Serves as the main entry point for the six-degrees executable.
  * There are no parameters to speak of.
  *
@@ -134,7 +166,7 @@ int main(int argc, const char *argv[])
       cout << "Good one.  This is only interesting if you specify two different people." << endl;
     } else {
       // replace the following line by a call to your generateShortestPath routine... 
-      if (!generateShortestPath(source, target, db, false)) {
+      if (!generateShortestPathV1(source, target, db, false)) {
         cout << endl << "No path between those two people could be found." << endl << endl;
       }
     }
