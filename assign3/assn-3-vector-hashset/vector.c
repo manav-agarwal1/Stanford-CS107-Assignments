@@ -66,7 +66,7 @@ void VectorInsert(vector *v, const void *elemAddr, int position)
     if (v->logLen == v->allocLen) {
         VectorGrow(v);
     }
-    void *target = (char *) v->elems + position * v->elemSize;
+    void *target = (char *) v->elems + position * v->elemSize; // Dont use VectorNth here as insertion can be at v->logLen and it will give assertion error.
     int endSize = (v->logLen - position) * v->elemSize;
     if (endSize != 0) {
         memmove((char *)target + v->elemSize, target, endSize);
@@ -88,7 +88,7 @@ void VectorAppend(vector *v, const void *elemAddr)
 void VectorDelete(vector *v, int position)
 {
     assert(position >= 0 && position < v->logLen);
-    void *target = (char *) v->elems + position * v->elemSize;
+    void *target = VectorNth(v, position);
     if (v->freeFn != NULL) {
         v->freeFn(target);
     }
