@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <search.h>
 
-static const int defaultInitalAllocation = 20;
+static const int defaultInitalAllocation = 10;
 void VectorNew(vector *v, int elemSize, VectorFreeFunction freeFn, int initialAllocation)
 {
     assert(elemSize > 0);
@@ -116,7 +116,7 @@ void VectorMap(vector *v, VectorMapFunction mapFn, void *auxData)
 static const int kNotFound = -1;
 int VectorSearch(const vector *v, const void *key, VectorCompareFunction searchFn, int startIndex, bool isSorted)
 { 
-    assert(startIndex >= 0 && startIndex < v->logLen);
+    assert(startIndex >= 0 && startIndex <= v->logLen);
     assert(searchFn != NULL);
     assert(key != NULL);
 
