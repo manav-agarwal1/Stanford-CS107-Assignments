@@ -25,7 +25,7 @@ TARGET-PURE = rss-news-search.purify
 default : $(TARGET)
 
 rss-news-search : $(OBJS)
-	$(CC) $(OBJS) $(CFLAGS)$(LDFLAGS) -o $@
+	$(CC) -g $(OBJS) $(CFLAGS) $(LDFLAGS) -o $@
 
 efence : rss-news-search.efence  
 
