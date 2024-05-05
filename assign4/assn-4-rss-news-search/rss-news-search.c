@@ -48,8 +48,9 @@ static void ProcessSingleNewsItem(streamtokenizer *st, hashset *stopWords, hashs
 static void ExtractElement(streamtokenizer *st, const char *htmlTag, char dataBuffer[], int bufferLength);
 static void ParseArticle(const char *articleTitle, const char *articleDescription, const char *articleURL, hashset *stopWords, hashset *words, vector *articles, hashset *indexEntries);
 static void ScanArticle(streamtokenizer *st, const char *articleTitle, const char *unused, const char *articleURL, hashset *stopWords, hashset *words, int pos, hashset *indexEntries);
-static void QueryIndices(hashset *stopWords, hashset *words);
-static void ProcessResponse(const char *word, hashset *stopWords, hashset *words);
+static void QueryIndices(hashset *stopWords, hashset *words, vector *articles, hashset *indexEntries);
+static int VectorCountReverseCmp(const void *elemAddr1, const void *elemAddr2);
+static void ProcessResponse(const char *word, hashset *stopWords, hashset *words, vector *articles, hashset *indexEntries);
 static bool WordIsWellFormed(const char *word);
 
 /**
@@ -91,7 +92,7 @@ int main(int argc, char **argv)
   VectorNew(&articles, sizeof(article *), ArticleFree, vectorInitSize);
   HashSetNew(&indexEntries, sizeof(indexEntry *), largeBuckets, IndexEntryHash, IndexEnrtyCompare, IndexEntryFree);
   BuildIndices((argc == 1) ? kDefaultFeedsFile : argv[1], &stopWords, &words, &articles, &indexEntries);
-  QueryIndices(&stopWords, &words);
+  QueryIndices(&stopWords, &words, &articles, &indexEntries);
   return 0;
 }
 
@@ -251,7 +252,7 @@ static int IndexEnrtyCompare(const void *elemAddr1, const void *elemAddr2) {
 static void IndexEntryFree(void *elemAddr) {
   indexEntry *ie = *(indexEntry **) elemAddr;
   StringFree(&ie->word);
-  free(&ie->wordCounts);
+  VectorDispose(&ie->wordCounts);
   free(ie);
 }
 
@@ -576,6 +577,8 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
             indexEntry *dummyIe = (indexEntry *) malloc(sizeof(indexEntry));
             dummyIe->word = wordCopy;
             ie = (indexEntry **) HashSetLookup(indexEntries, &dummyIe);
+            free(dummyIe->word);
+            free(dummyIe);
           }
           IndexEntryAddOcurrence(ie, pos);
         }
@@ -601,7 +604,7 @@ static void ScanArticle(streamtokenizer *st, const char *articleTitle, const cha
  * that contain that word.
  */
 
-static void QueryIndices(hashset *stopWords, hashset *words)
+static void QueryIndices(hashset *stopWords, hashset *words, vector *articles, hashset *indexEntries)
 {
   char response[1024];
   while (true) {
@@ -609,10 +612,16 @@ static void QueryIndices(hashset *stopWords, hashset *words)
     fgets(response, sizeof(response), stdin);
     response[strlen(response) - 1] = '\0';
     if (strcasecmp(response, "") == 0) break;
-    ProcessResponse(response, stopWords, words);
+    ProcessResponse(response, stopWords, words, articles, indexEntries);
   }
 }
 
+static int VectorCountReverseCmp(const void *elemAddr1, const void *elemAddr2) {
+  const wordCount* elem1 = *(const wordCount**) elemAddr1;
+  const wordCount* elem2 = *(const wordCount**) elemAddr2;
+
+  return elem2->count - elem1->count; // we need reverse sort
+}
 /** 
  * Function: ProcessResponse
  * -------------------------
@@ -620,15 +629,34 @@ static void QueryIndices(hashset *stopWords, hashset *words)
  * for a list of web documents containing the specified word.
  */
 
-static void ProcessResponse(const char *word, hashset *stopWords, hashset *words)
+static void ProcessResponse(const char *word, hashset *stopWords, hashset *words, vector *articles, hashset *indexEntries)
 {
   if (WordIsWellFormed(word)) {
     if (HashSetLookup(stopWords, &word) != NULL) {
       printf("\tWord is too common, please try something else\n");
     }
+    else if (HashSetLookup(words, &word) != NULL) {
+      indexEntry *dummyIe = (indexEntry *) malloc(sizeof(indexEntry));
+      dummyIe->word = strdup(word);
+      indexEntry* ie = *(indexEntry **) HashSetLookup(indexEntries, &dummyIe);
+      free(dummyIe->word);
+      free(dummyIe);
+      // IndexEntryFree(dummyIe);
+      vector *articlesFound = &ie->wordCounts;
+      printf("We found %d articles with the word \"%s\". [We'll just limit list 10, though.]", articlesFound->logicalLength, word);
+      VectorSort(articlesFound, VectorCountReverseCmp);
+      int limit = 10;
+      if (articlesFound->logicalLength < limit) {
+        limit = articlesFound->logicalLength;
+      }
+      for (int i = 0; i < limit; i++) {
+        wordCount *wc = *(wordCount **) VectorNth(articlesFound, i);
+        article *a = *(article **) VectorNth(articles, wc->pos);
+        printf("%d.) \"%s\" [search term occurs %d times]\n\"%s\"\n", i+1, a->title, wc->count, a->url);
+      }
+    }
     else {
-      printf("\tWell, we don't have the database mapping words to online news articles yet, but if we DID have\n");
-      printf("\tour hashset of indices, we'd list all of the articles containing \"%s\".\n", word);
+      printf("\tWell, we don't have the database mapping this word to online news articles yet\n");
     }
   } else {
     printf("\tWe won't be allowing words like \"%s\" into our set of indices.\n", word);
