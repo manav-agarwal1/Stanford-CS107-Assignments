@@ -265,19 +265,14 @@ static void IndexEntryAddOcurrence(indexEntry **ieAddr, int pos) {
   wordCount *wc = (wordCount *) malloc(sizeof(wordCount));
   wc->pos = pos;
 
-  // printf("%s %d\n", (*ieAddr)->word, wc->pos);
   int position = VectorSearch(&(*ieAddr)->wordCounts, &wc, WordCountComparePos, 0, false);
   if (position != -1) {
     wordCount **oldWc = (wordCount **) VectorNth(&(*ieAddr)->wordCounts, position);
-    // printf("%d, %d\n", (*oldWc)->pos, (*oldWc)->count);
     (*oldWc)->count++;
-    // printf("Updated Count %d\n", (*oldWc)->count);
   }
   else {
     wc->count = 1;
     VectorAppend(&(*ieAddr)->wordCounts, &wc);
-    // wordCount **oldWc = (wordCount **) VectorNth(&(*ieAddr)->wordCounts, VectorSearch(&(*ieAddr)->wordCounts, &wc, WordCountComparePos, 0, false));
-    // printf("%d, %d\n", (*oldWc)->pos, (*oldWc)->count);
   }
 }
 /**
